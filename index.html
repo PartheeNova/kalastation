@@ -3,124 +3,78 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>Rice GI - Standalone Dashboard</title>
+  <title>Rice GI Standalone Dashboard</title>
   <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
   <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" />
   <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;600;700&display=swap" rel="stylesheet">
   
   <style>
-    /* Exact CSS from your original version [cite: 2-19] */
     :root { --bg-color: #f4f7f9; --card-bg: #ffffff; --text-main: #2d3436; --text-muted: #6c757d; --border-color: rgba(0,0,0,0.1); }
-    [data-theme="dark"] { --bg-color: #121212; --card-bg: #1e1e1e; --text-main: #e0e0e0; --text-muted: #a0a0a0; --border-color: rgba(255,255,255,0.1); }
-    body { background: var(--bg-color); color: var(--text-main); font-family: 'Inter', sans-serif; transition: all 0.2s ease; }
-    .dashboard-header { position: relative; z-index: 2000; padding: 15px 0; border-bottom: 1px solid var(--border-color); background: var(--bg-color); }
-    .kpi-card { border-radius: 12px; border: 1px solid var(--border-color); background: var(--card-bg); height: 100%; transition: transform 0.2s; }
+    body { background: var(--bg-color); color: var(--text-main); font-family: 'Inter', sans-serif; }
+    .kpi-card { border-radius: 12px; border: 1px solid var(--border-color); background: var(--card-bg); height: 100%; padding: 15px; }
     .ribbon-card { border-left: 5px solid #1a73e8; }
-    .summary-bar { background: var(--card-bg); border-radius: 10px; padding: 12px 20px; border: 1px solid var(--border-color); }
-    .summary-item { border-right: 1px solid var(--border-color); padding: 0 15px; font-size: 0.85rem; }
-    .summary-item:last-child { border-right: none; }
-    .kpi-small-label { font-size: 0.7rem; text-transform: uppercase; font-weight: 700; color: var(--text-muted); }
-    .kpi-main-val { font-size: 1.4rem; font-weight: 700; }
     .chart-box { position: relative; height: 220px; width: 100%; }
-    #map { height: 350px; border-radius: 12px; width: 100%; z-index: 10; margin-top: 20px; border: 1px solid var(--border-color); }
-    .compass-container { position: relative; width: 110px; height: 110px; border: 3px solid var(--border-color); border-radius: 50%; margin: 5px auto; background: var(--card-bg); }
-    .compass-needle { position: absolute; top: 10%; left: 50%; width: 3px; height: 40%; background: #ff4757; transform-origin: bottom center; transition: transform 1s; z-index: 2; }
-    .compass-value { position: absolute; top: 50%; left: 50%; transform: translate(-50%, -50%); text-align: center; font-weight: 800; }
-    input[type="date"], select { background-color: var(--card-bg) !important; color: var(--text-main) !important; border: 1px solid var(--border-color) !important; }
-    @media print { .no-print { display: none !important; } }
+    #map { height: 350px; border-radius: 12px; width: 100%; margin-top: 20px; border: 1px solid var(--border-color); }
+    #debug-console { background: #1e1e1e; color: #00ff00; font-family: monospace; font-size: 11px; padding: 15px; border-radius: 8px; margin-top: 20px; max-height: 150px; overflow-y: auto; border: 2px solid #333; }
+    .no-print { margin-bottom: 20px; }
   </style>
 </head>
 <body>
 
-<div class="container-fluid py-2 px-lg-4">
-  <header class="dashboard-header no-print">
-    <div class="row align-items-center">
-      <div class="col-xl-3 col-12 mb-3 mb-xl-0">
-        <h5 class="m-0 fw-bold">Rice GI - Standalone Dashboard<span id="sync-dot" class="badge rounded-pill bg-success" style="width:10px; height:10px; padding:0; display:inline-block;"> </span></h5>
-        <small id="last-update" class="text-muted">CSV Refresh: Active</small>
-      </div>
-      
-      <div class="col-xl-9 col-12">
-        <div class="d-flex gap-2 flex-wrap justify-content-xl-end align-items-center">
-          <select id="stationSelect" class="form-select form-select-sm border-primary fw-bold" style="width: 180px;" onchange="updateDashboard()">
-            <option value="Station1">📍 WS1-Center</option>
-            <option value="Station2">📍 WS2-ลุงสัมฤทธิ์</option>
-            <option value="Station3">📍 WS3-แม่หนูพร</option>
-            <option value="Station4">📍 WS4-นาลุงทอง</option>
-            <option value="Station5">📍 WS5-นาลุงบุญเรือง</option>
-          </select>
+<div class="container-fluid py-3 px-lg-4">
+  <header class="no-print d-flex justify-content-between align-items-center bg-white p-3 rounded shadow-sm">
+    <div>
+      <h5 class="m-0 fw-bold">Rice GI Dashboard <span id="sync-dot" class="badge rounded-pill bg-danger">●</span></h5>
+      <small id="last-update" class="text-muted">Initializing Data...</small>
+    </div>
+    
+    <div class="d-flex gap-2">
+      <select id="stationSelect" class="form-select form-select-sm" style="width: 200px;" onchange="updateDashboard()">
+        <option value="Station1">📍 WS1-Center</option>
+        <option value="Station2">📍 WS2-ลุงสัมฤทธิ์</option>
+        <option value="Station3">📍 WS3-แม่หนูพร</option>
+        <option value="Station4">📍 WS4-นาลุงทอง</option>
+        <option value="Station5">📍 WS5-นาลุงบุญเรือง</option>
+      </select>
 
-          <button class="btn btn-sm btn-outline-secondary" onclick="toggleTheme()" id="themeBtn">🌙 Dark Mode</button>
-          
-          <div class="input-group input-group-sm w-auto">
-            <input type="date" id="startDate" class="form-control">
-            <input type="date" id="endDate" class="form-control">
-            <button class="btn btn-primary" onclick="updateDashboard('custom')">Apply</button>
-          </div>
-
-          <select id="rangeSelect" class="form-select form-select-sm" style="width: 110px;" onchange="updateDashboard()">
-            <option value="1">Last 24h</option>
-            <option value="7" selected>Last 7d</option>
-            <option value="30">Last 30d</option>
-          </select>
-
-          <div class="btn-group btn-group-sm">
-            <button class="btn btn-outline-primary" onclick="downloadCSV()">CSV</button>
-            <button class="btn btn-danger" onclick="generatePDF()">PDF</button>
-          </div>
-        </div>
-      </div>
+      <select id="rangeSelect" class="form-select form-select-sm" style="width: 110px;" onchange="updateDashboard()">
+        <option value="1">Last 24h</option>
+        <option value="7" selected>Last 7d</option>
+        <option value="30">Last 30d</option>
+      </select>
     </div>
   </header>
 
   <div id="pdf-area">
-    <div class="row g-3 mb-3 mt-2 text-center">
-      <div class="col-md-2 col-4"><div id="card-at" class="card kpi-card ribbon-card p-2"><div class="kpi-small-label">Air Temp</div><div class="kpi-main-val"><span id="ribbon-at">--</span>°</div></div></div>
-      <div class="col-md-2 col-4"><div id="card-ah" class="card kpi-card ribbon-card p-2" style="border-color:#3498db"><div class="kpi-small-label">Air Hum</div><div class="kpi-main-val"><span id="ribbon-ah">--</span>%</div></div></div>
-      <div class="col-md-2 col-4"><div class="card kpi-card ribbon-card p-2" style="border-color:#f39c12"><div class="kpi-small-label">Soil Temp</div><div class="kpi-main-val"><span id="ribbon-st">--</span>°</div></div></div>
-      <div class="col-md-2 col-4"><div class="card kpi-card ribbon-card p-2" style="border-color:#16a085"><div class="kpi-small-label">Soil Hum</div><div class="kpi-main-val"><span id="ribbon-sh">--</span>%</div></div></div>
-      <div class="col-md-2 col-4"><div class="card kpi-card ribbon-card p-2" style="border-color:#2ecc71"><div class="kpi-small-label">Rain Tot</div><div class="kpi-main-val"><span id="ribbon-rt">--</span></div></div></div>
-      <div class="col-md-2 col-4"><div class="card kpi-card ribbon-card p-2" style="border-color:#9b59b6"><div class="kpi-small-label">Lux</div><div class="kpi-main-val"><span id="ribbon-lx">--</span></div></div></div>
+    <div class="row g-3 mb-3 text-center">
+      <div class="col-md-2 col-4"><div class="card kpi-card ribbon-card"><span>Air Temp</span><h4 id="ribbon-at">--</h4></div></div>
+      <div class="col-md-2 col-4"><div class="card kpi-card ribbon-card" style="border-color:#3498db"><span>Air Hum</span><h4 id="ribbon-ah">--</h4></div></div>
+      <div class="col-md-2 col-4"><div class="card kpi-card ribbon-card" style="border-color:#f39c12"><span>Soil Temp</span><h4 id="ribbon-st">--</h4></div></div>
+      <div class="col-md-2 col-4"><div class="card kpi-card ribbon-card" style="border-color:#16a085"><span>Soil Hum</span><h4 id="ribbon-sh">--</h4></div></div>
+      <div class="col-md-2 col-4"><div class="card kpi-card ribbon-card" style="border-color:#2ecc71"><span>Rain Tot</span><h4 id="ribbon-rt">--</h4></div></div>
+      <div class="col-md-2 col-4"><div class="card kpi-card ribbon-card" style="border-color:#9b59b6"><span>Lux</span><h4 id="ribbon-lx">--</h4></div></div>
     </div>
 
-    <div class="summary-bar mb-4 d-flex align-items-center flex-wrap">
-      <div class="summary-item"><strong id="station-display">Loading Station...</strong> Stats</div>
-      <div class="summary-item">Max T: <span id="sum-max-at" class="text-danger">--</span>°C</div>
-      <div class="summary-item">Min T: <span id="sum-min-at" class="text-primary">--</span>°C</div>
-      <div class="summary-item">Total Rain: <span id="sum-rain" class="text-success">--</span> mm</div>
-      <div class="summary-item">Avg Lux: <span id="sum-avg-lx">--</span></div>
-    </div>
-
-    <div class="row g-3 mb-3">
-      <div class="col-md-6"><div class="card kpi-card p-3"><h6 class="kpi-small-label mb-2">Atmospheric Trends</h6><div class="chart-box"><canvas id="atmoChart"></canvas></div></div></div>
-      <div class="col-md-6"><div class="card kpi-card p-3"><h6 class="kpi-small-label mb-2">Solar Intensity</h6><div class="chart-box"><canvas id="luxChart"></canvas></div></div></div>
-      <div class="col-md-6"><div class="card kpi-card p-3"><h6 class="kpi-small-label mb-2">Soil Environment</h6><div class="chart-box"><canvas id="soilChart"></canvas></div></div></div>
-      <div class="col-md-6"><div class="card kpi-card p-3"><h6 class="kpi-small-label mb-2">NPK Nutrients</h6><div class="chart-box"><canvas id="npkChart"></canvas></div></div></div>
-      <div class="col-md-8"><div class="card kpi-card p-3"><h6 class="kpi-small-label mb-2">Rainfall Intensity</h6><div class="chart-box"><canvas id="rainChart"></canvas></div></div></div>
-      <div class="col-md-4">
-        <div class="card kpi-card p-3 text-center">
-          <h6 class="kpi-small-label mb-2">Wind Velocity</h6>
-          <div class="compass-container">
-            <div id="needle" class="compass-needle"></div>
-            <div class="compass-value"><span id="ws-val" style="font-size:1.3rem">0</span><br><small class="text-muted" style="font-size:0.6rem">m/s</small></div>
-          </div>
-        </div>
-      </div>
+    <div class="row g-3">
+      <div class="col-md-6"><div class="card kpi-card"><h6>Atmospheric Trends</h6><div class="chart-box"><canvas id="atmoChart"></canvas></div></div></div>
+      <div class="col-md-6"><div class="card kpi-card"><h6>Soil Environment</h6><div class="chart-box"><canvas id="soilChart"></canvas></div></div></div>
     </div>
   </div>
 
-  <div class="row g-3 no-print mb-4">
-    <div class="col-12"><div class="card kpi-card p-2"><div id="map"></div></div></div>
+  <div id="map"></div>
+  
+  <div id="debug-console">
+    <strong>[System Log]</strong><br>
+    Dashboard initialized. Fetching Google Sheet data...
   </div>
 </div>
 
 <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
 <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
-<script src="https://cdnjs.cloudflare.com/ajax/libs/html2pdf.js/0.10.1/html2pdf.bundle.min.js"></script>
 <script src="https://cdnjs.cloudflare.com/ajax/libs/PapaParse/5.3.2/papaparse.min.js"></script>
 
 <script>
-  // STEP 1: Paste your CSV links for each station below
+  // STEP 1: Insert your Google CSV URLs here
   const CSV_URLS = {
     "Station1": "https://docs.google.com/spreadsheets/d/e/2PACX-1vTlF2XlxASp81OwalhHyDHIjuQrJlQ9aNX39rG-CfyPW70B8ZO5z7hbYSObqNnWvcQYGxnnFadAHlfA/pub?gid=0&single=true&output=csv",
     "Station2": "https://docs.google.com/spreadsheets/d/e/2PACX-1vQCN67R_-V2iFOjw8sKyniqRNsCK_EuwPAAPQAVGkAqXq_HAZRdu0-gLcHCB1eE0iGTmudj73-HZoh1/pub?gid=0&single=true&output=csv",
@@ -137,132 +91,126 @@
     "Station5": { lat: 16.580340, lng: 104.139379, name: "WS5-นาลุงบุญเรือง"}
   };
 
-  let charts = {}, map, globalHistory = [], isDark = false;
+  let charts = {}, map, globalHistory = [];
+
+  function log(msg) {
+    const con = document.getElementById('debug-console');
+    con.innerHTML += `<br>> ${msg}`;
+    con.scrollTop = con.scrollHeight;
+  }
 
   function initMap() {
     map = L.map('map').setView([16.58, 104.12], 12);
     L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png').addTo(map);
     Object.keys(LOCATIONS).forEach(key => {
       const loc = LOCATIONS[key];
-      const marker = L.marker([loc.lat, loc.lng]).addTo(map).bindPopup(`<b>${loc.name}</b>`);
-      marker.on('click', () => { document.getElementById('stationSelect').value = key; updateDashboard(); });
+      L.marker([loc.lat, loc.lng]).addTo(map).bindPopup(loc.name);
     });
   }
 
-  function toggleTheme() {
-    isDark = !isDark;
-    document.documentElement.setAttribute('data-theme', isDark ? 'dark' : 'light');
-    document.getElementById('themeBtn').innerText = isDark ? "☀️ Light Mode" : "🌙 Dark Mode";
-    updateChartColors();
-  }
-
-  function updateChartColors() {
-    const textColor = isDark ? '#e0e0e0' : '#2d3436';
-    const gridColor = isDark ? 'rgba(255,255,255,0.05)' : 'rgba(0,0,0,0.05)';
-    Object.values(charts).forEach(chart => {
-      chart.options.scales.x.ticks.color = textColor;
-      chart.options.scales.y.ticks.color = textColor;
-      if(chart.options.scales.y1) chart.options.scales.y1.ticks.color = textColor;
-      chart.update();
-    });
-  }
-
-  function updateDashboard(mode) {
-    const stationKey = document.getElementById('stationSelect').value;
-    const url = CSV_URLS[stationKey];
+  function updateDashboard() {
+    const station = document.getElementById('stationSelect').value;
+    const url = CSV_URLS[station];
     const days = Number(document.getElementById('rangeSelect').value);
     
+    log(`Connecting to ${station}...`);
     document.getElementById('sync-dot').className = 'badge rounded-pill bg-warning';
-    
+
     Papa.parse(url, {
       download: true,
       header: true,
-      dynamicTyping: true,
+      skipEmptyLines: true,
       complete: function(results) {
-        processCSVData(results.data, days, mode, stationKey);
+        log(`Data fetched. Rows: ${results.data.length}`);
+        if(results.data.length > 0) {
+          processCSVData(results.data, days, station);
+        } else {
+          log("ERROR: CSV is empty. Check Google Sheet publishing.");
+        }
+      },
+      error: function(err) {
+        log(`CRITICAL ERROR: ${err}`);
       }
     });
   }
 
-  function processCSVData(rawData, days, mode, stationKey) {
-    // Filter data based on selected time range
-    const now = new Date();
-    const cutoff = new Date(now.getTime() - (days * 24 * 60 * 60 * 1000));
-    
-    const filtered = rawData.filter(row => {
-      if (!row.Timestamp) return false;
-      const rowDate = new Date(row.Timestamp);
-      return rowDate >= cutoff;
-    });
+  function processCSVData(rawData, days, stationKey) {
+    // Determine header names automatically (case-insensitive)
+    const firstRow = rawData[0];
+    const getCol = (possibleNames) => {
+        return Object.keys(firstRow).find(key => 
+            possibleNames.includes(key.toLowerCase().trim())
+        );
+    };
 
-    globalHistory = filtered.map(r => Object.values(r));
+    const keys = {
+        ts: getCol(['timestamp', 'time', 'date']),
+        temp: getCol(['temp', 'airtemp', 'temperature']),
+        hum: getCol(['hum', 'humidity', 'airhum']),
+        soilH: getCol(['soilhum', 'soilh', 'soil humidity']),
+        soilT: getCol(['soiltemp', 'soilt', 'soil temperature']),
+        rain: getCol(['raintot', 'rain', 'rainfall']),
+        lux: getCol(['lux', 'light', 'intensity'])
+    };
+
+    log(`Detected Headers: ${Object.values(keys).filter(k => k).join(', ')}`);
+
+    // Filter by time
+    const cutoff = new Date(Date.now() - (days * 24 * 60 * 60 * 1000));
+    const filtered = rawData.filter(row => new Date(row[keys.ts]) >= cutoff);
+
+    if (filtered.length === 0) {
+        log("ERROR: No rows match the date range.");
+        return;
+    }
+
     const latest = filtered[filtered.length - 1];
+    globalHistory = filtered;
 
-    // Update UI Elements [cite: 38-41]
-    document.getElementById('last-update').innerText = "Last Sync: " + latest.Timestamp;
-    document.getElementById('ribbon-at').innerText = latest.Temp;
-    document.getElementById('ribbon-ah').innerText = latest.Hum;
-    document.getElementById('ribbon-lx').innerText = latest.Lux;
-    document.getElementById('ribbon-sh').innerText = latest.SoilHum;
-    document.getElementById('ribbon-st').innerText = latest.SoilTemp;
-    document.getElementById('ribbon-rt').innerText = latest.RainTot;
-    document.getElementById('ws-val').innerText = latest.WindSpd; 
-    document.getElementById('needle').style.transform = `translateX(-50%) rotate(${latest.WindDir}deg)`;
+    // Update UI
+    document.getElementById('ribbon-at').innerText = (latest[keys.temp] || "--") + "°";
+    document.getElementById('ribbon-ah').innerText = (latest[keys.hum] || "--") + "%";
+    document.getElementById('ribbon-st').innerText = (latest[keys.soilT] || "--") + "°";
+    document.getElementById('ribbon-sh').innerText = (latest[keys.soilH] || "--") + "%";
+    document.getElementById('ribbon-rt').innerText = (latest[keys.rain] || "0");
+    document.getElementById('ribbon-lx').innerText = (latest[keys.lux] || "--");
+    document.getElementById('last-update').innerText = "Last Update: " + latest[keys.ts];
 
-    const temps = filtered.map(r => r.Temp);
-    const rain = filtered.map(r => r.RainInt || 0);
-    document.getElementById('sum-max-at').innerText = Math.max(...temps).toFixed(1);
-    document.getElementById('sum-min-at').innerText = Math.min(...temps).toFixed(1);
-    document.getElementById('sum-rain').innerText = rain.reduce((a, b) => a + b, 0).toFixed(1);
-    document.getElementById('station-display').innerText = LOCATIONS[stationKey].name;
+    // Render Charts
+    const labels = filtered.map(r => r[keys.ts]);
+    renderLine('atmoChart', labels, [
+        {label: 'Temp', data: filtered.map(r => r[keys.temp]), color: '#e74c3c'},
+        {label: 'Hum', data: filtered.map(r => r[keys.hum]), color: '#3498db'}
+    ]);
+    renderLine('soilChart', labels, [
+        {label: 'Soil T', data: filtered.map(r => r[keys.soilT]), color: '#f39c12'},
+        {label: 'Soil H', data: filtered.map(r => r[keys.soilH]), color: '#16a085'}
+    ]);
 
-    // Render Charts matching original logic [cite: 43-45]
-    const labels = filtered.map(r => r.Timestamp);
-    renderLine('atmoChart', labels, [{label:'Temp', data:filtered.map(r=>r.Temp), color:'#e74c3c'}, {label:'Hum', data:filtered.map(r=>r.Hum), color:'#3498db', yID:'y1'}], true);
-    renderLine('luxChart', labels, [{label:'Lux', data:filtered.map(r=>r.Lux), color:'#9b59b6'}]);
-    renderLine('soilChart', labels, [{label:'Soil T', data:filtered.map(r=>r.SoilTemp), color:'#f39c12'}, {label:'Soil H', data:filtered.map(r=>r.SoilHum), color:'#16a085', yID:'y1'}], true);
-    renderLine('npkChart', labels, [{label:'N', data:filtered.map(r=>r.N), color:'#27ae60'}, {label:'P', data:filtered.map(r=>r.P), color:'#2980b9'}, {label:'K', data:filtered.map(r=>r.K), color:'#8e44ad'}]);
-    renderBar('rainChart', labels, filtered.map(r=>r.RainInt), '#3498db');
-    
     map.panTo([LOCATIONS[stationKey].lat, LOCATIONS[stationKey].lng]);
     document.getElementById('sync-dot').className = 'badge rounded-pill bg-success';
-    updateChartColors();
+    log("Dashboard Sync Successful.");
   }
 
-  function renderLine(id, labels, datasets, dual = false) {
+  function renderLine(id, labels, datasets) {
     if (charts[id]) charts[id].destroy();
     charts[id] = new Chart(document.getElementById(id), {
       type: 'line',
-      data: { labels: labels, datasets: datasets.map(ds => ({ label: ds.label, data: ds.data, borderColor: ds.color, tension: 0.3, pointRadius: 0, yAxisID: ds.yID || 'y' }))},
-      options: { responsive: true, maintainAspectRatio: false, scales: { x: { ticks: { autoSkip: true, maxTicksLimit: 8 } }, y1: { display: dual, position: 'right', grid: { drawOnChartArea: false } } } }
+      data: { 
+        labels: labels, 
+        datasets: datasets.map(d => ({ 
+            label: d.label, 
+            data: d.data, 
+            borderColor: d.color, 
+            tension: 0.3, 
+            pointRadius: 0 
+        })) 
+      },
+      options: { responsive: true, maintainAspectRatio: false }
     });
   }
 
-  function renderBar(id, labels, data, color) {
-    if (charts[id]) charts[id].destroy();
-    charts[id] = new Chart(document.getElementById(id), {
-      type: 'bar',
-      data: { labels: labels, datasets: [{ label: 'Rain (mm)', data: data, backgroundColor: color }] },
-      options: { responsive: true, maintainAspectRatio: false, plugins: { legend: { display: false } } }
-    });
-  }
-
-  function generatePDF() {
-    const stationName = document.getElementById('stationSelect').options[document.getElementById('stationSelect').selectedIndex].text;
-    const element = document.getElementById('pdf-area');
-    const opt = { margin: 0.3, filename: stationName + '_Report.pdf', html2canvas: { scale: 2 }, jsPDF: { orientation: 'landscape' } };
-    html2pdf().set(opt).from(element).save();
-  }
-
-  function downloadCSV() {
-    let csv = "Timestamp,Temp,Hum,Lux,WindSpd,WindDir,SoilH,SoilT,N,P,K,RainTot,RainInt\n" + globalHistory.map(e => e.join(",")).join("\n");
-    let link = document.createElement("a");
-    link.href = 'data:text/csv;charset=utf-8,' + encodeURI(csv);
-    link.download = "Data_Export.csv";
-    link.click();
-  }
-
-  window.onload = () => { initMap(); updateDashboard(); setInterval(() => updateDashboard(), 60000); };
+  window.onload = () => { initMap(); updateDashboard(); };
 </script>
 </body>
 </html>
