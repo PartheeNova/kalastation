@@ -1,205 +1,311 @@
 <!DOCTYPE html>
 <html lang="en">
 <head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Industrial IoT & Environmental Portal</title>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Core Gateway | Enterprise IoT Portal</title>
+  
+  <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
+  <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" />
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;600;700&display=swap" rel="stylesheet">
+
+  <style>
+    :root { --bg-color: #f4f7f9; --card-bg: #ffffff; --text-main: #2d3436; --text-muted: #6c757d; --border-color: rgba(0,0,0,0.1); --accent: #1a73e8; }
+    [data-theme="dark"] { --bg-color: #121212; --card-bg: #1e1e1e; --text-main: #e0e0e0; --border-color: rgba(255,255,255,0.1); }
+
+    body { background: var(--bg-color); color: var(--text-main); font-family: 'Inter', sans-serif; margin: 0; padding-top: 75px; transition: 0.3s; }
     
-    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
-    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;600;700&display=swap" rel="stylesheet">
-    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    /* Top Nav */
+    .navbar { background: #0f172a !important; box-shadow: 0 2px 10px rgba(0,0,0,0.2); }
+    .nav-link { color: #94a3b8 !important; font-weight: 600; cursor: pointer; border-bottom: 2px solid transparent; }
+    .nav-link.active { color: white !important; border-bottom: 2px solid var(--accent); }
 
-    <style>
-        :root {
-            --sidebar-width: 280px;
-            --primary-bg: #0f172a;
-            --accent-blue: #3b82f6;
-            --card-bg: #ffffff;
-            --text-main: #1e293b;
-        }
-
-        body { 
-            font-family: 'Inter', sans-serif; 
-            background-color: #f8fafc; 
-            color: var(--text-main);
-            overflow-x: hidden;
-        }
-
-        /* Sidebar Sidebar */
-        .sidebar {
-            width: var(--sidebar-width);
-            height: 100vh;
-            background: var(--primary-bg);
-            color: white;
-            position: fixed;
-            left: 0;
-            top: 0;
-            padding: 2rem 1.5rem;
-            display: flex;
-            flex-direction: column;
-            z-index: 1000;
-        }
-
-        .nav-link {
-            color: #94a3b8;
-            padding: 12px 15px;
-            border-radius: 8px;
-            margin-bottom: 5px;
-            transition: 0.3s;
-            display: flex;
-            align-items: center;
-            gap: 12px;
-            text-decoration: none;
-        }
-
-        .nav-link:hover, .nav-link.active {
-            background: rgba(59, 130, 246, 0.1);
-            color: var(--accent-blue);
-        }
-
-        .nav-link.active {
-            background: var(--accent-blue);
-            color: white;
-        }
-
-        /* Content Area */
-        .main-content {
-            margin-left: var(--sidebar-width);
-            padding: 2.5rem;
-            min-height: 100vh;
-        }
-
-        .app-iframe {
-            width: 100%;
-            height: 85vh;
-            border: none;
-            border-radius: 12px;
-            background: white;
-            box-shadow: 0 10px 25px rgba(0,0,0,0.05);
-            display: none; /* Hidden initially */
-        }
-
-        .welcome-screen {
-            display: block;
-        }
-
-        /* Feature Cards */
-        .portal-card {
-            background: white;
-            border-radius: 16px;
-            padding: 2rem;
-            border: 1px solid #e2e8f0;
-            transition: 0.3s;
-            cursor: pointer;
-            height: 100%;
-        }
-
-        .portal-card:hover {
-            transform: translateY(-5px);
-            box-shadow: 0 20px 25px -5px rgba(0, 0, 0, 0.1);
-            border-color: var(--accent-blue);
-        }
-
-        .icon-box {
-            width: 50px;
-            height: 50px;
-            border-radius: 12px;
-            display: flex;
-            align-items: center;
-            justify-content: center;
-            font-size: 1.5rem;
-            margin-bottom: 1.5rem;
-        }
-
-        .badge-live { background: #dcfce7; color: #166534; font-size: 0.7rem; }
-    </style>
+    /* UI Elements */
+    .kpi-card { border-radius: 12px; border: 1px solid var(--border-color); background: var(--card-bg); height: 100%; border-left: 5px solid var(--accent); }
+    .kpi-small-label { font-size: 0.7rem; text-transform: uppercase; font-weight: 700; color: var(--text-muted); }
+    .kpi-main-val { font-size: 1.4rem; font-weight: 700; }
+    .chart-box { position: relative; height: 250px; width: 100%; background: var(--card-bg); border-radius: 12px; padding: 10px; border: 1px solid var(--border-color); }
+    #map { height: 350px; border-radius: 12px; width: 100%; margin-top: 20px; border: 1px solid var(--border-color); }
+    
+    /* Compass from kalaStation.aspx */
+    .compass-container { position: relative; width: 100px; height: 100px; border: 3px solid var(--border-color); border-radius: 50%; margin: 0 auto; background: var(--card-bg); }
+    .compass-needle { position: absolute; top: 10%; left: 50%; width: 4px; height: 40%; background: #ff4757; transform-origin: bottom center; transition: transform 1s; z-index: 2; border-radius: 2px; }
+    .compass-value { position: absolute; top: 50%; left: 50%; transform: translate(-50%, -50%); text-align: center; font-weight: 800; font-size: 0.9rem; }
+  </style>
 </head>
-<body>
+<body data-theme="light">
 
-<div class="sidebar">
-    <div class="mb-5">
-        <h4 class="fw-bold mb-0"><i class="fas fa-microchip me-2 text-primary"></i>CORE GATEWAY</h4>
-        <small class="text-secondary">Industrial Monitor v2.0</small>
+<nav class="navbar navbar-expand-lg navbar-dark fixed-top">
+  <div class="container-fluid px-lg-4">
+    <a class="navbar-brand fw-bold" href="#" onclick="showPage('home')">CORE GATEWAY</a>
+    <div class="ms-auto d-flex align-items-center no-print">
+      <small id="sync-status" class="text-light me-3 d-none d-md-block">Initializing...</small>
+      <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#navbarNav">
+        <span class="navbar-toggler-icon"></span>
+      </button>
     </div>
-
-    <nav class="flex-grow-1">
-        <a href="#" class="nav-link active" onclick="showApp('welcome')">
-            <i class="fas fa-home"></i> Dashboard Home
-        </a>
-        <div class="text-uppercase text-secondary small fw-bold mt-4 mb-2">Systems</div>
-        <a href="#" class="nav-link" onclick="showApp('firebase')">
-            <i class="fas fa-bolt"></i> Real-time IoT Nodes
-        </a>
-        <a href="#" class="nav-link" onclick="showApp('gsheet')">
-            <i class="fas fa-cloud-sun"></i> Regional Weather GI
-        </a>
-    </nav>
-
-    <div class="mt-auto p-3 bg-dark rounded text-center">
-        <small class="text-secondary d-block">System Integrity</small>
-        <span class="text-success small"><i class="fas fa-check-circle"></i> Operational</span>
+    <div class="collapse navbar-collapse" id="navbarNav">
+      <ul class="navbar-nav ms-auto">
+        <li class="nav-item"><a class="nav-link active" id="nav-home" onclick="showPage('home')">Home</a></li>
+        <li class="nav-item"><a class="nav-link" id="nav-iot" onclick="showPage('iot')">IoT Nodes</a></li>
+        <li class="nav-item"><a class="nav-link" id="nav-weather" onclick="showPage('weather')">Weather GI</a></li>
+        <li class="nav-item"><a class="nav-link" id="nav-history" onclick="showPage('history')">Company Portal</a></li>
+      </ul>
     </div>
-</div>
+  </div>
+</nav>
 
-<div class="main-content">
-    
-    <div id="welcome" class="welcome-screen">
-        <div class="mb-5">
-            <h2 class="fw-bold">Welcome back, Site Manager</h2>
-            <p class="text-secondary">Centralized telemetry for Node-1, Node-2, and GI Weather Stations.</p>
-        </div>
+<div class="container-fluid px-lg-4" id="app-viewport">
+  </div>
 
-        <div class="row g-4">
-            <div class="col-md-6">
-                <div class="portal-card" onclick="showApp('firebase')">
-                    <div class="icon-box bg-primary text-white"><i class="fas fa-broadcast-tower"></i></div>
-                    <span class="badge badge-live mb-2 px-2 py-1 rounded-pill">REAL-TIME</span>
-                    <h4 class="fw-bold">Smart Agriculture Nodes</h4>
-                    <p class="text-secondary">Direct RS485 data from Node-1 (Ambient) and Node-2 (Soil). Powered by Firebase.</p>
-                    <button class="btn btn-outline-primary btn-sm mt-3">Access Live Data <i class="fas fa-arrow-right ms-2"></i></button>
-                </div>
-            </div>
-
-            <div class="col-md-6">
-                <div class="portal-card" onclick="showApp('gsheet')">
-                    <div class="icon-box bg-success text-white"><i class="fas fa-seedling"></i></div>
-                    <span class="badge bg-light text-dark mb-2 px-2 py-1 rounded-pill">STATION DATA</span>
-                    <h4 class="fw-bold">Regional Rice GI</h4>
-                    <p class="text-secondary">Aggregated data from WS1 through WS5 via Google Spreadsheets. PDF reporting enabled.</p>
-                    <button class="btn btn-outline-success btn-sm mt-3">View Regional Stations <i class="fas fa-arrow-right ms-2"></i></button>
-                </div>
-            </div>
-        </div>
-    </div>
-
-    <iframe id="firebase-app" class="app-iframe" src="firebase_nodes.html"></iframe>
-
-    <iframe id="gsheet-app" class="app-iframe" src="Apri_nodes.html"></iframe>
-
-</div>
+<script src="https://www.gstatic.com/firebasejs/8.10.1/firebase-app.js"></script>
+<script src="https://www.gstatic.com/firebasejs/8.10.1/firebase-database.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+<script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/PapaParse/5.3.2/papaparse.min.js"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/html2pdf.js/0.10.1/html2pdf.bundle.min.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
 
 <script>
-    function showApp(appType) {
-        // Reset Views
-        document.getElementById('welcome').style.display = 'none';
-        document.getElementById('firebase-app').style.display = 'none';
-        document.getElementById('gsheet-app').style.display = 'none';
+  // --- CONFIG ---
+  const FB_CONFIG = {         
+    apiKey: "AIzaSyBDxPO2M4qLzJ0CPHymC6rMu4BqdZVxcYE",
+    authDomain: "smart-farm-58d2e.firebaseapp.com",
+    databaseURL: "https://smart-farm-58d2e-default-rtdb.asia-southeast1.firebasedatabase.app",
+    projectId: "smart-farm-58d2e",
+    storageBucket: "smart-farm-58d2e.firebasestorage.app",
+    messagingSenderId: "607346437155",
+    appId: "1:607346437155:web:2fddabc712330bdf8fd596" 
+  };
+  
+  // Replace these with your published Google Sheet CSV URLs [cite: 25]
+  const CSV_URLS = { 
+    "Station1": "https://docs.google.com/spreadsheets/d/e/2PACX-1vTlF2XlxASp81OwalhHyDHIjuQrJlQ9aNX39rG-CfyPW70B8ZO5z7hbYSObqNnWvcQYGxnnFadAHlfA/pub?gid=0&single=true&output=csv",
+    "Station2": "https://docs.google.com/spreadsheets/d/e/2PACX-1vQCN67R_-V2iFOjw8sKyniqRNsCK_EuwPAAPQAVGkAqXq_HAZRdu0-gLcHCB1eE0iGTmudj73-HZoh1/pub?gid=0&single=true&output=csv",
+    "Station3": "https://docs.google.com/spreadsheets/d/e/2PACX-1vTIxdVPSzyELRwSONbkG_nlY7CZufgVTAX-wpbnKEa-qd5_d1E_vj_WCllqUbCJmrBmD-3536mN82td/pub?gid=0&single=true&output=csv",
+    "Station4": "https://docs.google.com/spreadsheets/d/e/2PACX-1vT4K5gX_cezEtXCF6wdDcZs158Kk76Yfc8nXAKPBxb_TbYcIaukoGeRt7RL28_uu_65N4Ij5CkhWo6Z/pub?gid=0&single=true&output=csv",
+    "Station5": "https://docs.google.com/spreadsheets/d/e/2PACX-1vSu50u1uD8I3MoIr-JjRwBNoo93Dy5HwQqW76y4eG01_WfpmQZ9tlua2JPedkZnx-huno_zK7SQEmqJ/pub?gid=0&single=true&output=csv"
+  };
 
-        // Reset Nav Links
-        document.querySelectorAll('.nav-link').forEach(link => link.classList.remove('active'));
+const LOCATIONS = {
+    "Station1": { lat: 16.585336, lng: 104.129084, name: "WS1-Center" },
+    "Station2": { lat: 16.562694, lng: 104.099798, name: "WS2-ลุงสัมฤทธ์"},
+    "Station3": { lat: 16.591757, lng: 104.136539, name: "WS3-แม่หนูพร"},
+    "Station4": { lat: 16.597545, lng: 104.152571, name: "WS4-นาลุงทอง"},
+    "Station5": { lat: 16.580340, lng: 104.139379, name: "WS5-นาลุงบุญเรือง"}
+  };
 
-        if(appType === 'welcome') {
-            document.getElementById('welcome').style.display = 'block';
-            document.querySelector('[onclick="showApp(\'welcome\')"]').classList.add('active');
-        } else if(appType === 'firebase') {
-            document.getElementById('firebase-app').style.display = 'block';
-            document.querySelector('[onclick="showApp(\'firebase\')"]').classList.add('active');
-        } else if(appType === 'gsheet') {
-            document.getElementById('gsheet-app').style.display = 'block';
-            document.querySelector('[onclick="showApp(\'gsheet\')"]').classList.add('active');
-        }
+  let charts = {}, fbDb, mapObj;
+
+  function showPage(pageId) {
+    const vp = document.getElementById('app-viewport');
+    document.querySelectorAll('.nav-link').forEach(l => l.classList.remove('active'));
+    document.getElementById('nav-' + pageId).classList.add('active');
+    if (fbDb) fbDb.ref('locations/location-1/latest').off();
+
+    switch(pageId) {
+      case 'home': vp.innerHTML = `<div class="text-center py-5"><h2>System Overview</h2></div>`; break;
+      case 'iot': renderIot(vp); break;
+      case 'weather': renderWeather(vp); break;
+      case 'history': vp.innerHTML = `<div class="card p-5 mt-4"><h3>Company Base</h3></div>`; break;
     }
-</script>
+  }
 
+  // --- IOT MODULE ---
+  function renderIot(container) {
+    container.innerHTML = `
+      <div class="bg-white p-3 rounded border mb-3">
+        <div class="row g-2 align-items-end">
+          <div class="col-md-3"><label class="kpi-small-label">Range</label>
+            <select class="form-select form-select-sm" id="iotRange" onchange="initIot(this.value)">
+              <option value="24">24h</option><option value="168">7d</option><option value="720">30d</option>
+            </select>
+          </div>
+        </div>
+      </div>
+      <div class="row g-3">
+        <div class="col-md-2 col-6"><div class="card kpi-card p-2"><div class="kpi-small-label">Air Temp</div><div class="kpi-main-val" id="at-v">--</div></div></div>
+        <div class="col-md-2 col-6"><div class="card kpi-card p-2" style="border-color:#3498db"><div class="kpi-small-label">Air Hum</div><div class="kpi-main-val" id="ah-v">--</div></div></div>
+        <div class="col-md-2 col-6"><div class="card kpi-card p-2" style="border-color:#f39c12"><div class="kpi-small-label">Soil Temp</div><div class="kpi-main-val" id="st-v">--</div></div></div>
+        <div class="col-md-2 col-6"><div class="card kpi-card p-2" style="border-color:#16a085"><div class="kpi-small-label">Soil Hum</div><div class="kpi-main-val" id="sh-v">--</div></div></div>
+        <div class="col-md-4 col-12"><div class="card kpi-card p-2" style="border-color:#9b59b6"><div class="kpi-small-label">Lux</div><div class="kpi-main-val" id="lx-v">--</div></div></div>
+        <div class="col-md-6"><div class="chart-box"><canvas id="iotAtmo"></canvas></div></div>
+        <div class="col-md-6"><div class="chart-box"><canvas id="iotSoil"></canvas></div></div>
+        <div class="col-12"><div class="chart-box"><canvas id="iotLux"></canvas></div></div>
+        <div class="col-12"><div id="map"></div></div>
+      </div>`;
+    initIot(24);
+  }
+
+  function initIot(hrs) {
+    if (!firebase.apps.length) firebase.initializeApp(FB_CONFIG);
+    fbDb = firebase.database();
+    fbDb.ref('locations/location-1/latest').on('value', snap => {
+      const d = snap.val();
+      if(d) {
+        document.getElementById('at-v').innerText = d.ambient_temp + "°";
+        document.getElementById('ah-v').innerText = d.ambient_hum + "%";
+        document.getElementById('st-v').innerText = d.soil_temp + "°";
+        document.getElementById('sh-v').innerText = d.soil_hum + "%";
+        document.getElementById('lx-v').innerText = d.lux;
+        document.getElementById('sync-status').innerText = "Last Sync: " + new Date(d.ts).toLocaleTimeString();
+      }
+    });
+
+    const cutoff = Date.now() - (hrs * 3600000);
+    fbDb.ref('locations/location-1/logs').orderByChild('ts').startAt(cutoff).once('value', snap => {
+      let labs = [], at = [], ah = [], st = [], sh = [], lx = [];
+      snap.forEach(c => {
+        const v = c.val();
+        labs.push(new Date(v.ts).toLocaleTimeString([], {hour:'2-digit', minute:'2-digit'}));
+        at.push(v.ambient_temp); ah.push(v.ambient_hum); st.push(v.soil_temp); sh.push(v.soil_hum); lx.push(v.lux);
+      });
+      renderDual('iotAtmo', labs, 'Air Temp', at, '#e74c3c', 'Air Hum', ah, '#3498db');
+      renderDual('iotSoil', labs, 'Soil Temp', st, '#f39c12', 'Soil Hum', sh, '#16a085');
+      renderSingle('iotLux', labs, 'Lux', lx, '#9b59b6');
+      initMap([16.58, 104.12]);
+    });
+  }
+
+  // --- WEATHER GI MODULE ---
+  function renderWeather(container) {
+    container.innerHTML = `
+      <div class="bg-white p-3 rounded border mb-3">
+        <div class="row g-2 align-items-end">
+          <div class="col-md-3"><label class="kpi-small-label">Station</label>
+            <select id="stationSelect" class="form-select form-select-sm fw-bold border-primary" onchange="initWeather()">
+              <option value="Station1">📍 WS1-Center</option><option value="Station2">📍 WS2-ลุงสัมฤทธ์</option>
+              <option value="Station3">📍 WS3-แม่หนูพร</option><option value="Station4">📍 WS4-นาลุงทอง</option>
+              <option value="Station5">📍 WS5-นาลุงบุญเรือง</option>
+            </select>
+          </div>
+          <div class="col-md-2"><label class="kpi-small-label">Range</label>
+            <select id="rangeSelect" class="form-select form-select-sm" onchange="handleRangeChange()">
+              <option value="1">24h</option><option value="7" selected>7d</option><option value="30">30d</option><option value="custom">Custom</option>
+            </select>
+          </div>
+          <div id="custom-date-group" class="col-md-4 d-none">
+            <div class="d-flex gap-2">
+              <div class="flex-grow-1"><label class="kpi-small-label">Start</label><input type="date" id="startDate" class="form-control form-control-sm" onchange="initWeather()"></div>
+              <div class="flex-grow-1"><label class="kpi-small-label">End</label><input type="date" id="endDate" class="form-control form-control-sm" onchange="initWeather()"></div>
+            </div>
+          </div>
+        </div>
+      </div>
+      <div id="pdf-area">
+        <div class="row g-3 mb-3 text-center">
+          <div class="col-md-2 col-4"><div class="card kpi-card p-2"><div class="kpi-small-label">Air Temp</div><div class="kpi-main-val"><span id="rb-at">--</span>°C</div></div></div>
+          <div class="col-md-2 col-4"><div class="card kpi-card p-2" style="border-color:#3498db"><div class="kpi-small-label">Air Hum</div><div class="kpi-main-val"><span id="rb-ah">--</span>%</div></div></div>
+          <div class="col-md-2 col-4"><div class="card kpi-card p-2" style="border-color:#f39c12"><div class="kpi-small-label">Soil Temp</div><div class="kpi-main-val"><span id="rb-st">--</span>°C</div></div></div>
+          <div class="col-md-2 col-4"><div class="card kpi-card p-2" style="border-color:#16a085"><div class="kpi-small-label">Soil Hum</div><div class="kpi-main-val"><span id="rb-sh">--</span>%</div></div></div>
+          <div class="col-md-2 col-4"><div class="card kpi-card p-2" style="border-color:#2ecc71"><div class="kpi-small-label">Rain Tot</div><div class="kpi-main-val"><span id="rb-rt">--</span></div></div></div>
+          <div class="col-md-2 col-4"><div class="card kpi-card p-2" style="border-color:#9b59b6"><div class="kpi-small-label">Lux</div><div class="kpi-main-val"><span id="rb-lx">--</span></div></div></div>
+        </div>
+        <div class="row g-3">
+          <div class="col-md-6"><div class="chart-box"><canvas id="atmoChart"></canvas></div></div>
+          <div class="col-md-6"><div class="chart-box"><canvas id="luxChart"></canvas></div></div>
+          <div class="col-md-6"><div class="chart-box"><canvas id="soilChart"></canvas></div></div>
+          <div class="col-md-6"><div class="chart-box"><canvas id="npkChart"></canvas></div></div>
+          <div class="col-md-8"><div class="chart-box"><canvas id="rainChart"></canvas></div></div>
+          <div class="col-md-4"><div class="card p-3 text-center border h-100"><h6 class="kpi-small-label mb-2">Wind Velocity</h6>
+            <div class="compass-container"><div id="needle" class="compass-needle"></div><div class="compass-value"><span id="ws-val">0</span><br><small>m/s</small></div></div>
+          </div></div>
+        </div>
+      </div><div id="map"></div>`;
+    initWeather();
+  }
+
+  function handleRangeChange() {
+    const r = document.getElementById('rangeSelect').value;
+    document.getElementById('custom-date-group').classList.toggle('d-none', r !== 'custom');
+    if (r !== 'custom') initWeather();
+  }
+
+  function initWeather() {
+    const s = document.getElementById('stationSelect').value;
+    Papa.parse(CSV_URLS[s], {
+      download: true, header: true, skipEmptyLines: true,
+      complete: (res) => { if(res.data.length > 0) processGI(res.data, s); }
+    });
+  }
+
+  function processGI(rawData, sk) {
+    const data = rawData.map(r => ({
+      tsStr: r.Time, ts: new Date(r.Time.replace(/ /g, " ")),
+      temp: parseFloat(r.AmbTemp || 0), hum: parseFloat(r.AmbHum || 0), lux: parseFloat(r.Lux || 0),
+      ws: parseFloat(r.WindSpeed || 0), wd: parseFloat(r.WindDir || 0),
+      soilH: parseFloat(r.SoilHum || 0), soilT: parseFloat(r.SoilTemp || 0),
+      n: parseFloat(r.SoilN || 0), p: parseFloat(r.SoilP || 0), k: parseFloat(r.SoilK || 0),
+      rainI: parseFloat(r.RainInterval || 0), rainT: parseFloat(r.RainTotal || 0)
+    }));
+
+    const r = document.getElementById('rangeSelect').value;
+    let filtered = data;
+    if (r === 'custom') {
+      const start = new Date(document.getElementById('startDate').value).setHours(0,0,0,0);
+      const end = new Date(document.getElementById('endDate').value).setHours(23,59,59,999);
+      if (start && end) filtered = data.filter(r => r.ts >= start && r.ts <= end);
+    } else if (r !== 'all') {
+      filtered = data.filter(r => r.ts.getTime() > (Date.now() - (parseInt(r) * 86400000)));
+    }
+    if (filtered.length === 0) filtered = data.slice(-100);
+    const lat = filtered[filtered.length - 1];
+
+    document.getElementById('rb-at').innerText = lat.temp.toFixed(1);
+    document.getElementById('rb-ah').innerText = lat.hum.toFixed(1);
+    document.getElementById('rb-st').innerText = lat.soilT.toFixed(1);
+    document.getElementById('rb-sh').innerText = lat.soilH.toFixed(1);
+    document.getElementById('rb-rt').innerText = lat.rainT.toFixed(1);
+    document.getElementById('rb-lx').innerText = lat.lux.toFixed(0);
+    document.getElementById('ws-val').innerText = lat.ws.toFixed(1);
+    document.getElementById('needle').style.transform = `translateX(-50%) rotate(${lat.wd}deg)`;
+    document.getElementById('sync-status').innerText = "Last Sync: " + lat.tsStr;
+
+    const labs = filtered.map(r => r.tsStr);
+    renderDual('atmoChart', labs, 'Air Temp', filtered.map(r=>r.temp), '#e74c3c', 'Air Hum', filtered.map(r=>r.hum), '#3498db');
+    renderSingle('luxChart', labs, 'Lux', filtered.map(r=>r.lux), '#9b59b6');
+    renderDual('soilChart', labs, 'Soil Temp', filtered.map(r=>r.soilT), '#f39c12', 'Soil Hum', filtered.map(r=>r.soilH), '#16a085');
+    
+    if(charts['npk']) charts['npk'].destroy();
+    charts['npk'] = new Chart(document.getElementById('npkChart'), { type:'line', data:{labels:labs, datasets:[
+      {label:'N', data:filtered.map(r=>r.n), borderColor:'#27ae60', pointRadius:0},
+      {label:'P', data:filtered.map(r=>r.p), borderColor:'#2980b9', pointRadius:0},
+      {label:'K', data:filtered.map(r=>r.k), borderColor:'#8e44ad', pointRadius:0}
+    ]}, options:{responsive:true, maintainAspectRatio:false}});
+
+    if(charts['rain']) charts['rain'].destroy();
+    charts['rain'] = new Chart(document.getElementById('rainChart'), { type:'bar', data:{labels:labs, datasets:[{label:'Rain', data:filtered.map(r=>r.rainI), backgroundColor:'#3498db'}]}, options:{responsive:true, maintainAspectRatio:false}});
+    
+    initMap([LOCATIONS[sk].lat, LOCATIONS[sk].lng]);
+  }
+
+  // --- HELPERS ---
+  function initMap(coords) {
+    if (mapObj) mapObj.remove();
+    mapObj = L.map('map').setView(coords, 13);
+    L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png').addTo(mapObj);
+    L.marker(coords).addTo(mapObj);
+  }
+
+  function renderDual(id, labels, l1, d1, c1, l2, d2, c2) {
+    if(charts[id]) charts[id].destroy();
+    charts[id] = new Chart(document.getElementById(id), {
+      type:'line', data:{labels, datasets:[
+        {label:l1, data:d1, borderColor:c1, yAxisID:'y', tension:0.3, pointRadius:0},
+        {label:l2, data:d2, borderColor:c2, yAxisID:'y1', tension:0.3, pointRadius:0}
+      ]}, options:{responsive:true, maintainAspectRatio:false, scales:{y:{type:'linear', position:'left'}, y1:{type:'linear', position:'right', grid:{drawOnChartArea:false}}}}
+    });
+  }
+
+  function renderSingle(id, labels, l, d, c) {
+    if(charts[id]) charts[id].destroy();
+    charts[id] = new Chart(document.getElementById(id), {
+      type:'line', data:{labels, datasets:[{label:l, data:d, borderColor:c, fill:true, backgroundColor:c+'22', tension:0.3, pointRadius:0}]}, options:{responsive:true, maintainAspectRatio:false}
+    });
+  }
+
+  window.onload = () => showPage('home');
+</script>
 </body>
 </html>
